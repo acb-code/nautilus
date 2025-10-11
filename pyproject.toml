@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nautilus-rl"
+version = "0.1.0"
+description = "Learn-by-building RL algorithms (DQN, PPO) with solid engineering"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "torch",
+  "gymnasium",
+  "numpy",
+  "tqdm",
+  "tensorboard",
+  "pydantic>=2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "mypy", "pre-commit"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+lint.select = ["E","F","I","UP","B","SIM","PYI"]
+lint.ignore = ["E203","E266","E501"]
+format.preview = true
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+strict = false
+
+[tool.pytest.ini_options]
+testpaths = ["nautilus/tests"]
+addopts = "-q"

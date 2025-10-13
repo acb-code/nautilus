@@ -1,0 +1,12 @@
+torch
+gymnasium
+numpy
+tqdm
+tensorboard
+pydantic>=2
+
+[dev]
+pytest
+ruff
+mypy
+pre-commit

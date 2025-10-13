@@ -35,3 +35,6 @@ strict = false
 [tool.pytest.ini_options]
 testpaths = ["nautilus/tests"]
 addopts = "-q"
+
+[tool.setuptools.packages.find]
+include = ["nautilus*"]

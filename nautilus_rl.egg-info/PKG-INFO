@@ -1,3 +1,23 @@
+Metadata-Version: 2.4
+Name: nautilus-rl
+Version: 0.1.0
+Summary: Learn-by-building RL algorithms (DQN, PPO) with solid engineering
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: torch
+Requires-Dist: gymnasium
+Requires-Dist: numpy
+Requires-Dist: tqdm
+Requires-Dist: tensorboard
+Requires-Dist: pydantic>=2
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Requires-Dist: pre-commit; extra == "dev"
+Dynamic: license-file
+
 # 🧭 Nautilus — Reinforcement Learning Examples
 
 **Nautilus** is a *learn-by-building* reinforcement learning (RL) codebase.

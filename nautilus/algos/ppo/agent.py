@@ -59,19 +59,18 @@ class PPOAgent(PolicyOptimizerBase):
         }
 
     def compute_losses(self, batch: dict) -> dict:
-        """
-        Note: In PPO, we don't compute a single loss and return it.
-        We iterate multiple times. This method is used here to PRE-PROCESS
-        the batch (calculate GAE) before the update loop.
-        """
-        # 1. Extract raw data
+        # 1. Extract raw data (Time, Envs)
         obs = torch.as_tensor(batch["obs"], dtype=torch.float32, device=self.device)
-        rews = batch["rewards"]  # numpy
-        dones = batch["dones"]  # numpy
-        vals = np.array([i["val"] for i in batch["infos"]])  # Extract values from info dict
+        # Flatten observation dimensions for the network forward pass later
+        # (T, N, ObsDim) -> (T*N, ObsDim)
+        obs_flat = obs.view(-1, *obs.shape[2:])
 
-        # 2. Calculate GAE and Returns (using functional utils)
-        # We need the value of the "next" state after the rollout for bootstrapping
+        # Convert other numpy arrays
+        rews = batch["rewards"]
+        dones = batch["dones"].astype(np.float32)
+        vals = np.array([i["val"] for i in batch["infos"]])  # Shape (T, N)
+
+        # 2. Get Bootstrap Value
         with torch.no_grad():
             last_val = (
                 self.ac.v(torch.as_tensor(self.obs, dtype=torch.float32, device=self.device))
@@ -79,37 +78,49 @@ class PPOAgent(PolicyOptimizerBase):
                 .numpy()
             )
 
-        # Append last_val to values for GAE calculation
-        bootstrap_values = [last_val]  # Simplified: assumes 1 env/episode structure for now
-
-        # Compute Advantages (GAE)
+        # 3. Compute GAE (Vectorized) - Returns Numpy
         advs = compute_gae(
             rewards=rews,
             values=vals,
             dones=dones,
             gamma=self.config.gamma,
             lam=self.config.lam,
-            bootstrap_values=bootstrap_values,  # This assumes strict episodic structure, see note below
+            next_value=last_val,
+            next_done=np.zeros_like(last_val),
         )
 
-        # Compute Returns (Ret = Adv + Val)
+        # 4. Compute Returns
         rets = advs + vals
 
-        # Standardize Advantages
-        advs = standardize_advantages(advs)
+        # 5. Flatten and Prepare Tensors
 
-        # Convert to Torch
-        batch_tensors = {
-            "obs": obs,
-            "act": torch.as_tensor(batch["actions"], device=self.device),
-            "ret": torch.as_tensor(rets, dtype=torch.float32, device=self.device),
-            "adv": torch.as_tensor(advs, dtype=torch.float32, device=self.device),
-            "logp_old": torch.as_tensor(
-                [i["log_prob"] for i in batch["infos"]], dtype=torch.float32, device=self.device
-            ),
+        # Actions
+        actions = batch["actions"]
+        if len(actions.shape) > 2:  # Continuous
+            act_flat = torch.as_tensor(actions.reshape(-1, actions.shape[-1]), device=self.device)
+        else:  # Discrete
+            act_flat = torch.as_tensor(actions.flatten(), device=self.device)
+
+        # LogProbs
+        logprobs = np.array([i["log_prob"] for i in batch["infos"]])
+        logp_old_flat = torch.as_tensor(logprobs.flatten(), dtype=torch.float32, device=self.device)
+
+        # Returns
+        ret_flat = torch.as_tensor(rets.flatten(), dtype=torch.float32, device=self.device)
+
+        # --- FIX IS HERE ---
+        # Normalize Advantages using Numpy BEFORE converting to Tensor
+        adv_flat_np = advs.flatten()
+        adv_flat_np = standardize_advantages(adv_flat_np)
+        adv_flat = torch.as_tensor(adv_flat_np, dtype=torch.float32, device=self.device)
+
+        return {
+            "obs": obs_flat,
+            "act": act_flat,
+            "ret": ret_flat,
+            "adv": adv_flat,
+            "logp_old": logp_old_flat,
         }
-
-        return batch_tensors
 
     def update_params(self, batch_tensors: dict):
         """

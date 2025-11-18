@@ -28,6 +28,15 @@ Using Conda is generally recommended when dealing with environments that require
     pre-commit install
     ```
 
+4.  **Optional: Install Box2D environments (LunarLander, BipedalWalker):**
+    ```bash
+    # swig is required so box2d-py can build
+    pip install swig
+    pip install -e .[envs]
+    # If you hit a GLIBCXX error on linux/conda, install a newer libstdc++ runtime:
+    # conda install -c conda-forge libstdcxx-ng
+    ```
+
 4.  **Optional: Install JAX dependencies (for JAX-based algorithms):**
     This step installs the JAX backend (defaults to CPU). For GPU installation, refer to the official JAX documentation.
     ```bash
@@ -51,6 +60,15 @@ You can also use the standard Python virtual environment (`venv`).
     pip install -U pip
     pip install -e .[dev]
     pre-commit install
+    ```
+
+3.  **Optional: Install Box2D environments (LunarLander, BipedalWalker):**
+    ```bash
+    # swig is required so box2d-py can build
+    pip install swig
+    pip install -e .[envs]
+    # If you hit a GLIBCXX error on linux/conda, install a newer libstdc++ runtime:
+    # conda install -c conda-forge libstdcxx-ng
     ```
 
 3.  **Optional: Install JAX dependencies (for JAX-based algorithms):**

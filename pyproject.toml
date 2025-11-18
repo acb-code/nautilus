@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+# Include swig so editable installs/build isolation have the binary available for Box2D builds.
+requires = ["setuptools>=68", "wheel", "swig"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -24,6 +25,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "mypy", "pre-commit"]
+
+envs = [
+  "gymnasium[box2d]",
+  "box2d-py",
+  "swig",
+]
 
 jax = [
   # Using the official PyPI package `jax` will install the CPU-only version.

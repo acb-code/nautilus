@@ -31,6 +31,9 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1, help="seed of the experiment")
     parser.add_argument("--num-envs", type=int, default=4, help="number of parallel environments")
     parser.add_argument(
+        "--normalize", action="store_true", help="apply obs/reward normalization wrappers"
+    )
+    parser.add_argument(
         "--capture-video",
         action="store_true",
         help="whether to capture videos of the agent performances",
@@ -88,7 +91,11 @@ def main():
         env_factory = make_atari_env
         NetworkClass = PixelActorCritic
     else:
-        env_factory = make_env
+        normalize_flag = args.normalize
+
+        def env_factory(env_id, seed, idx, capture_video, run_name):
+            return make_env(env_id, seed, idx, capture_video, run_name, normalize=normalize_flag)
+
         NetworkClass = ActorCritic  # Or ActorCriticShared if you prefer
 
     # 3. Create Vectorized Environments (The "MPI replacement")
@@ -142,16 +149,17 @@ def evaluate(agent, env_id, seed, run_name):
     """
     Runs a single instance of the environment for visualization/testing.
     """
+    # Minimal eval env with human rendering; normalization is disabled for eval by default.
     env = gym.make(env_id, render_mode="human")
     env = gym.wrappers.RecordEpisodeStatistics(env)
+    if isinstance(env.action_space, gym.spaces.Box):
+        env = gym.wrappers.ClipAction(env)
 
     obs, _ = env.reset(seed=seed)
     done = False
     while not done:
         # Select action (deterministic=True is often better for eval)
-        # Note: Our current PPO select_action samples.
-        # For rigorous eval, you might want to add a 'deterministic' flag to select_action.
-        action, _ = agent.select_action(obs)
+        action, _ = agent.select_action(obs, deterministic=True)
 
         # Handle vector-to-scalar action mismatch if necessary
         # (Our agent expects vector inputs/outputs usually)
@@ -162,6 +170,9 @@ def evaluate(agent, env_id, seed, run_name):
 
         obs, _, terminated, truncated, info = env.step(step_action)
         done = terminated or truncated
+
+        # For some environments, a manual render call helps ensure frames show.
+        env.render()
 
         if done:
             print(f"Test Episode Return: {info['episode']['r']}")

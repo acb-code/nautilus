@@ -38,7 +38,7 @@ class PPOAgent(PolicyOptimizerBase):
         self.pi_optimizer = optim.Adam(self.ac.pi.parameters(), lr=config.pi_lr)
         self.v_optimizer = optim.Adam(self.ac.v.parameters(), lr=config.vf_lr)
 
-    def select_action(self, obs: np.ndarray) -> tuple[Any, dict]:
+    def select_action(self, obs: np.ndarray, deterministic: bool = False) -> tuple[Any, dict]:
         """
         Run the actor network to get action and auxiliary info (value, log_prob).
         """
@@ -47,8 +47,13 @@ class PPOAgent(PolicyOptimizerBase):
 
             # Forward pass through actor
             dist = self.ac.pi(obs_tensor)
-            action = dist.sample()
-            log_prob = dist.log_prob(action)
+            if deterministic:
+                # Discrete: take most likely action; Continuous: use mean
+                action = dist.probs.argmax(dim=-1) if hasattr(dist, "probs") else dist.mean
+                log_prob = dist.log_prob(action)
+            else:
+                action = dist.sample()
+                log_prob = dist.log_prob(action)
 
             # Forward pass through critic (needed for GAE later)
             value = self.ac.v(obs_tensor)

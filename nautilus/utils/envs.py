@@ -9,7 +9,7 @@ from gymnasium.wrappers import (
 )
 
 
-def make_env(env_id, seed, idx, capture_video, run_name, gamma=0.99):
+def make_env(env_id, seed, idx, capture_video, run_name, gamma=0.99, normalize: bool = True):
     """
     Factory function to create a single environment instance.
     """
@@ -30,13 +30,13 @@ def make_env(env_id, seed, idx, capture_video, run_name, gamma=0.99):
         if isinstance(env.action_space, gym.spaces.Box):
             env = ClipAction(env)
 
-        # 3. Normalization
-        env = NormalizeObservation(env)
-        env = NormalizeReward(env, gamma=gamma)
-
-        # FIX 2: Explicitly pass observation_space to TransformObservation
-        # Newer Gymnasium versions require this argument.
-        env = TransformObservation(env, lambda obs: np.clip(obs, -10, 10), env.observation_space)
+        # 3. Optional Normalization
+        if normalize:
+            env = NormalizeObservation(env)
+            env = NormalizeReward(env, gamma=gamma)
+            env = TransformObservation(
+                env, lambda obs: np.clip(obs, -10, 10), env.observation_space
+            )
 
         env.action_space.seed(seed)
         env.observation_space.seed(seed)

@@ -18,3 +18,7 @@ wandb/
 *.png
 !benchmark_results_smoothed.png
 *.csv
+build/
+.pytest_cache/
+.ruff_cache/
+videos/

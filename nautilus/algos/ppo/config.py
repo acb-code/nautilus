@@ -10,6 +10,7 @@ class PPOConfig(OptimizerConfig):
     lam: float = 0.95  # GAE lambda
     clip_ratio: float = 0.2  # PPO clip ratio
     target_kl: float = 0.01  # Target KL for early stopping
+    lr_decay: bool = False  # Linearly decay learning rates to zero over training
 
     # Optimization
     pi_lr: float = 3e-4

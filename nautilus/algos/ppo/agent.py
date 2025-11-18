@@ -37,6 +37,8 @@ class PPOAgent(PolicyOptimizerBase):
         # Set up optimizers
         self.pi_optimizer = optim.Adam(self.ac.pi.parameters(), lr=config.pi_lr)
         self.v_optimizer = optim.Adam(self.ac.v.parameters(), lr=config.vf_lr)
+        self._pi_lr_init = config.pi_lr
+        self._vf_lr_init = config.vf_lr
 
     def select_action(self, obs: np.ndarray, deterministic: bool = False) -> tuple[Any, dict]:
         """
@@ -134,6 +136,8 @@ class PPOAgent(PolicyOptimizerBase):
         1. Run policy gradient descent for `train_pi_iter` steps.
         2. Run value function descent for `train_v_iter` steps.
         """
+        self._maybe_anneal_lr()
+
         obs = batch_tensors["obs"]
         act = batch_tensors["act"]
         ret = batch_tensors["ret"]
@@ -192,12 +196,37 @@ class PPOAgent(PolicyOptimizerBase):
             self.v_optimizer.step()
 
         # Store metrics for logging (optional)
+        pi_lr, vf_lr = self._current_lrs()
         self.latest_metrics = {
             "loss_pi": loss_pi.item(),
             "loss_v": loss_v.item(),
             "kl": kl.item(),
             "delta_loss_pi": (loss_pi.item() - 0),  # simplified
+            "pi_lr": pi_lr,
+            "vf_lr": vf_lr,
         }
+
+    def _current_lrs(self) -> tuple[float, float]:
+        """Return current learning rates for policy and value optimizers."""
+        return (
+            self.pi_optimizer.param_groups[0]["lr"],
+            self.v_optimizer.param_groups[0]["lr"],
+        )
+
+    def _maybe_anneal_lr(self):
+        """Linearly decay learning rates to zero if enabled in config."""
+        if not getattr(self.config, "lr_decay", False):
+            return
+
+        progress = min(max(self.total_steps / self.config.total_steps, 0.0), 1.0)
+        factor = 1.0 - progress
+        new_pi_lr = self._pi_lr_init * factor
+        new_vf_lr = self._vf_lr_init * factor
+
+        for group in self.pi_optimizer.param_groups:
+            group["lr"] = new_pi_lr
+        for group in self.v_optimizer.param_groups:
+            group["lr"] = new_vf_lr
 
     def log_status(self, losses: dict):
         # Override to log the metrics generated during update_params

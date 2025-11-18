@@ -1,5 +1,6 @@
 import gymnasium as gym
 import numpy as np
+import pytest
 import torch
 
 from nautilus.algos.ppo.agent import PPOAgent
@@ -95,3 +96,50 @@ def test_agent_update_early_stop_logs_metrics():
     assert hasattr(agent, "latest_metrics")
     for key in ["loss_pi", "loss_v", "kl"]:
         assert key in agent.latest_metrics
+
+
+def test_agent_lr_decay_updates_optimizers():
+    """
+    Learning rates should linearly decay based on training progress when enabled.
+    """
+    env_id = "CartPole-v1"
+
+    def env_fn():
+        env = gym.make(env_id)
+        env.num_envs = 1
+        return env
+
+    total_steps = 100
+    config = PPOConfig(
+        total_steps=total_steps,
+        train_pi_iter=1,
+        train_v_iter=0,
+        target_kl=1e6,
+        lr_decay=True,
+    )
+    dummy_env = gym.make(env_id)
+    network = ActorCritic(dummy_env)
+    agent = PPOAgent(env_fn, network, config)
+
+    batch_size = 2
+    obs_dim = dummy_env.observation_space.shape[0]
+    batch = {
+        "obs": np.random.randn(batch_size, 1, obs_dim).astype(np.float32),
+        "actions": np.random.randint(0, 2, (batch_size, 1)),
+        "rewards": np.random.randn(batch_size, 1),
+        "dones": np.zeros((batch_size, 1)),
+        "infos": [
+            {"val": np.array([0.0]), "log_prob": np.array([-0.6])} for _ in range(batch_size)
+        ],
+    }
+
+    # Simulate mid-training progress before the update step.
+    agent.total_steps = total_steps // 2
+
+    initial_pi_lr = agent.pi_optimizer.param_groups[0]["lr"]
+    losses = agent.compute_losses(batch)
+    agent.update_params(losses)
+    updated_pi_lr = agent.pi_optimizer.param_groups[0]["lr"]
+
+    expected_lr = initial_pi_lr * 0.5
+    assert pytest.approx(updated_pi_lr, rel=1e-6, abs=0.0) == expected_lr

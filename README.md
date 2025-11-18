@@ -60,22 +60,19 @@ You can also use the standard Python virtual environment (`venv`).
 
 ---
 
-Run your first agent:
+Run your first PPO agent:
 
 ```bash
-python scripts/train_dqn.py --env CartPole-v1
+python nautilus/runners/ppo_runner.py --env-id CartPole-v1
 ```
 
 See progress with TensorBoard:
 
 ```bash
-make tb
+tensorboard --logdir runs
 ```
 
-Logs, configs, and checkpoints are stored under:
-```
-runs/{algo}/{env}/{YYYYmmdd-HHMMSS}/
-```
+Logs go to `runs/{env}__{seed}__{timestamp}/` and checkpoints to `checkpoints/{env}__{seed}__{timestamp}/`.
 
 ---
 
@@ -117,67 +114,6 @@ notebooks/      # learning notebooks & experiments
 Both TensorBoard and WandB logging are configured through `nautilus/utils/logger.py` and the runner flags.
 
 ---
-
-## 🧭 Learning roadmap
-
-| Stage | Concepts | Implementation Targets |
-|-------|-----------|------------------------|
-| **M1 – Foundations** | MDPs, returns, buffers, exploration | utils/, buffers/, samplers/, basic train loop |
-| **M2 – Bandits** | ε-greedy, UCB, regret | `algos/bandits/` |
-| **M3 – Tabular Q-learning** | DP vs TD, off-policy updates | `algos/tabular/q_learning.py` |
-| **M4 – Deep Q-Network (DQN)** | replay buffer, target net, ε-schedule | `algos/dqn/agent.py`, Atari wrappers |
-| **M5 – Policy Gradients → PPO** | REINFORCE, GAE(λ), clipping, entropy bonus | `algos/ppo/agent.py` |
-| **M6 – Extras** | Prioritized replay, n-step, distributed eval | `envs/`, `utils/`, `runners/` |
-
-Each milestone comes with:
-- Concept notebook (`notebooks/`)
-- Unit tests (`tests/`)
-- Reproducible configs (`configs/`)
-- TensorBoard plots (`runs/`)
-
----
-
-## 🧪 Development
-
-Lint, format, and test:
-
-```bash
-make lint
-make test
-```
-
-Run pre-commit hooks manually:
-
-```bash
-pre-commit run --all-files
-```
-
----
-
-## ⚙️ Configuration
-
-All hyperparameters and environment settings live in `configs/`, e.g.:
-
-```yaml
-# configs/algos/dqn/cartpole.yaml
-seed: 1
-env: CartPole-v1
-steps: 50000
-batch_size: 64
-gamma: 0.99
-lr: 0.001
-sync_interval: 500
-```
-
-CLI overrides work out of the box:
-
-```bash
-python scripts/train_dqn.py --env CartPole-v1 --steps 100000
-```
-
----
-
-## 📒 Learning resources
 
 These implementations are inspired by:
 - *Understanding Deep Learning* — Simon Prince (Chapter 19)

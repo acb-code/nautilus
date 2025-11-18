@@ -16,6 +16,7 @@ nautilus/runners/ppo_runner.py
 nautilus/runners/train_loop.py
 nautilus/tests/test_agent.py
 nautilus/tests/test_buffers.py
+nautilus/tests/test_logger.py
 nautilus/tests/test_math.py
 nautilus/tests/test_networks.py
 nautilus/utils/collections.py

@@ -12,6 +12,7 @@ Requires-Dist: tqdm
 Requires-Dist: tensorboard
 Requires-Dist: pydantic>=2
 Requires-Dist: wandb
+Requires-Dist: pygame
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: ruff; extra == "dev"
@@ -87,22 +88,19 @@ You can also use the standard Python virtual environment (`venv`).
 
 ---
 
-Run your first agent:
+Run your first PPO agent:
 
 ```bash
-python scripts/train_dqn.py --env CartPole-v1
+python nautilus/runners/ppo_runner.py --env-id CartPole-v1
 ```
 
 See progress with TensorBoard:
 
 ```bash
-make tb
+tensorboard --logdir runs
 ```
 
-Logs, configs, and checkpoints are stored under:
-```
-runs/{algo}/{env}/{YYYYmmdd-HHMMSS}/
-```
+Logs go to `runs/{env}__{seed}__{timestamp}/` and checkpoints to `checkpoints/{env}__{seed}__{timestamp}/`.
 
 ---
 
@@ -120,6 +118,28 @@ nautilus/
 scripts/        # runnable scripts (train_dqn.py, train_ppo.py)
 notebooks/      # learning notebooks & experiments
 ```
+
+---
+
+## 📈 Logging & Tracking
+
+- **TensorBoard**: run training in one terminal, then in another:
+
+  ```bash
+  python nautilus/runners/ppo_runner.py --env-id CartPole-v1
+  tensorboard --logdir runs
+  ```
+
+- **Weights & Biases**: install `wandb` (`pip install wandb`) and set `WANDB_API_KEY`. Enable tracking with:
+
+  ```bash
+  python nautilus/runners/ppo_runner.py --env-id CartPole-v1 --track --wandb-project-name my-rl-experiments
+  ```
+
+  You can also pass `--wandb-entity <team>` to log to a shared org.
+  If you prefer, run `wandb login` once instead of exporting `WANDB_API_KEY`.
+
+Both TensorBoard and WandB logging are configured through `nautilus/utils/logger.py` and the runner flags.
 
 ---
 

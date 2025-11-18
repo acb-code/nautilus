@@ -16,6 +16,7 @@ dependencies = [
   "tensorboard",
   "pydantic>=2",
   "wandb",
+  "pygame",
 ]
 
 [project.optional-dependencies]

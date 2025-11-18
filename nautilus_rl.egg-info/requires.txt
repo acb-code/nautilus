@@ -5,6 +5,7 @@ tqdm
 tensorboard
 pydantic>=2
 wandb
+pygame
 
 [dev]
 pytest

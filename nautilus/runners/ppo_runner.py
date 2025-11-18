@@ -53,6 +53,11 @@ def parse_args():
         "--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project"
     )
 
+    # Load model args
+    parser.add_argument(
+        "--checkpoint", type=str, default="", help="path to a trained model.pt file"
+    )
+
     args = parser.parse_args()
     return args
 
@@ -101,6 +106,11 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     network = NetworkClass(dummy_env).to(device)
+
+    # load checkpoint if specified
+    if args.checkpoint:
+        print(f"📂 Loading model from {args.checkpoint}...")
+        network.load_state_dict(torch.load(args.checkpoint, map_location=device))
 
     # 5. Setup Agent
     agent = PPOAgent(

@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 import numpy as np
@@ -194,3 +195,16 @@ class PPOAgent(PolicyOptimizerBase):
         # Override to log the metrics generated during update_params
         if hasattr(self, "latest_metrics"):
             super().log_status(self.latest_metrics)
+
+    def save_checkpoint(self):
+        """
+        Saves the PyTorch model to the path specified in config.
+        """
+        path = f"{self.config.save_path}.pt"
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        # Save the Actor-Critic state dict
+        torch.save(self.ac.state_dict(), path)
+        print(f"💾 Model saved to {path}")

@@ -76,6 +76,20 @@ Logs go to `runs/{env}__{seed}__{timestamp}/` and checkpoints to `checkpoints/{e
 
 ---
 
+## ▶️ Train and test quick examples
+
+- **Train PPO on CartPole (100k steps, 4 envs):**
+  ```bash
+  python nautilus/runners/ppo_runner.py --env-id CartPole-v1 --total-steps 100000 --num-envs 4
+  ```
+
+- **Visual test run using a saved checkpoint:**
+  ```bash
+  python nautilus/runners/ppo_runner.py --env-id CartPole-v1 --mode test --checkpoint "checkpoints/YOUR_RUN_NAME.pt"
+  ```
+
+---
+
 ## 📂 Repository structure
 
 ```

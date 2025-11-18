@@ -1,10 +1,6 @@
 # 🧭 Nautilus — Reinforcement Learning Examples
 
-**Nautilus** is a *learn-by-building* reinforcement learning (RL) codebase.
-It’s designed to teach modern RL algorithms through clean, reproducible engineering —
-starting simple (bandits and tabular methods), then scaling to deep algorithms like **DQN** and **PPO**.
-
-> The goal isn’t just to run agents — it’s to understand *why they work*, and build the tooling right.
+**Nautilus** is a reinforcement learning (RL) codebase.
 
 ---
 

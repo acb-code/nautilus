@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nautilus-rl"
 version = "0.1.0"
-description = "Learn-by-building RL algorithms (DQN, PPO) with solid engineering"
+description = "RL"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

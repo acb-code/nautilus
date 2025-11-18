@@ -8,9 +8,11 @@ vf_lr: 0.00025
 clip_ratio: 0.2
 target_kl: 0.01
 lr_decay: true
-train_pi_iter: 10
-train_v_iter: 10
-rollout_length: 2048
+minibatch_size: 512
+update_epochs: 4
+train_pi_iter: 1
+train_v_iter: 1
+rollout_length: 1024
 normalize: true
 track: true
 wandb_project: nautilus-ppo

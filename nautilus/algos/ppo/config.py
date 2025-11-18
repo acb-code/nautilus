@@ -11,6 +11,8 @@ class PPOConfig(OptimizerConfig):
     clip_ratio: float = 0.2  # PPO clip ratio
     target_kl: float = 0.01  # Target KL for early stopping
     lr_decay: bool = False  # Linearly decay learning rates to zero over training
+    minibatch_size: int | None = None  # SGD minibatch size (full batch if None)
+    update_epochs: int | None = None  # Number of passes over each batch
 
     # Optimization
     pi_lr: float = 3e-4

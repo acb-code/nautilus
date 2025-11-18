@@ -22,7 +22,14 @@ def test_agent_update_step():
         return env
 
     # Use a large target_kl to avoid early stopping on synthetic data.
-    config = PPOConfig(total_steps=100, train_pi_iter=1, train_v_iter=1, target_kl=1e6)
+    config = PPOConfig(
+        total_steps=100,
+        train_pi_iter=1,
+        train_v_iter=1,
+        target_kl=1e6,
+        minibatch_size=5,
+        update_epochs=2,
+    )
     dummy_env = gym.make(env_id)
     network = ActorCritic(dummy_env)
 

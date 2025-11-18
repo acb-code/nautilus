@@ -144,56 +144,75 @@ class PPOAgent(PolicyOptimizerBase):
         adv = batch_tensors["adv"]
         logp_old = batch_tensors["logp_old"]
 
+        batch_size = obs.shape[0]
+        minibatch_size = self.config.minibatch_size if self.config.minibatch_size else batch_size
+        minibatch_size = min(minibatch_size, batch_size)
+        policy_epochs = self.config.update_epochs or self.config.train_pi_iter
+        value_epochs = self.config.update_epochs or self.config.train_v_iter
+
+        def iter_minibatches():
+            # Fresh shuffle each epoch to reduce correlation.
+            indices = torch.randperm(batch_size, device=self.device)
+            for start in range(0, batch_size, minibatch_size):
+                yield indices[start : start + minibatch_size]
+
         # --- Policy Update ---
         loss_pi = torch.tensor(0.0, device=self.device)
         kl = torch.tensor(0.0, device=self.device)
-        for i in range(self.config.train_pi_iter):
-            self.pi_optimizer.zero_grad()
+        early_stop = False
+        for epoch in range(policy_epochs):
+            for mb_idx in iter_minibatches():
+                self.pi_optimizer.zero_grad()
 
-            # Get current distribution
-            dist = self.ac.pi(obs)
-            logp_new = dist.log_prob(act)
+                # Get current distribution
+                dist = self.ac.pi(obs[mb_idx])
+                logp_new = dist.log_prob(act[mb_idx])
 
-            # Check KL for early stopping
-            kl = approximate_kl(logp_old, logp_new)
-            if kl > 1.5 * self.config.target_kl:
-                print(f"Early stopping at step {i} due to reaching max KL.")
+                # Check KL for early stopping
+                kl = approximate_kl(logp_old[mb_idx], logp_new)
+                if kl > 1.5 * self.config.target_kl:
+                    print(f"Early stopping policy update at epoch {epoch} due to reaching max KL.")
+                    early_stop = True
+                    break
+
+                # Calculate PPO Loss (Functional)
+                loss_pi = ppo_policy_loss(
+                    new_log_probs=logp_new,
+                    old_log_probs=logp_old[mb_idx],
+                    advantages=adv[mb_idx],
+                    clip_ratio=self.config.clip_ratio,
+                )
+
+                # Add Entropy Bonus to encourage exploration
+                ent = dist.entropy()
+                if ent.dim() > 1:
+                    ent = ent.sum(-1)
+                ent_bonus = 0.01 * ent.mean()
+                loss_pi = loss_pi - ent_bonus
+
+                loss_pi.backward()
+                self.pi_optimizer.step()
+
+            if early_stop:
                 break
-
-            # Calculate PPO Loss (Functional)
-            loss_pi = ppo_policy_loss(
-                new_log_probs=logp_new,
-                old_log_probs=logp_old,
-                advantages=adv,
-                clip_ratio=self.config.clip_ratio,
-            )
-
-            # Add Entropy Bonus to encourage exploration
-            ent = dist.entropy()
-            if ent.dim() > 1:
-                ent = ent.sum(-1)
-            ent_bonus = 0.01 * ent.mean()
-            loss_pi = loss_pi - ent_bonus
-
-            loss_pi.backward()
-            self.pi_optimizer.step()
 
         # --- Value Update ---
         loss_v = torch.tensor(0.0, device=self.device)
-        for _i in range(self.config.train_v_iter):
-            self.v_optimizer.zero_grad()
+        for _epoch in range(value_epochs):
+            for mb_idx in iter_minibatches():
+                self.v_optimizer.zero_grad()
 
-            pred_val = self.ac.v(obs)
+                pred_val = self.ac.v(obs[mb_idx])
 
-            # Calculate Value Loss (Functional)
-            loss_v = value_loss(
-                values=pred_val,
-                target_values=ret,
-                clip=None,  # Optional: implement value clipping here
-            )
+                # Calculate Value Loss (Functional)
+                loss_v = value_loss(
+                    values=pred_val,
+                    target_values=ret[mb_idx],
+                    clip=None,  # Optional: implement value clipping here
+                )
 
-            loss_v.backward()
-            self.v_optimizer.step()
+                loss_v.backward()
+                self.v_optimizer.step()
 
         # Store metrics for logging (optional)
         pi_lr, vf_lr = self._current_lrs()

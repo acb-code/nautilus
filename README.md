@@ -80,8 +80,8 @@ Logs go to `runs/{env}__{seed}__{timestamp}/` and checkpoints to `checkpoints/{e
 
 ```
 nautilus/
+  algos/        # implementations (ppo/, dqn/, tabular/)
   core/         # buffers, networks, samplers, advantages
-  algos/        # implementations (dqn/, ppo/, tabular/)
   envs/         # gym + dm-control wrappers
   utils/        # logging, seeding, config, checkpointing
   runners/      # train loops and CLI entrypoints
@@ -89,6 +89,8 @@ nautilus/
   tests/        # pytest suites
 scripts/        # runnable scripts (train_dqn.py, train_ppo.py)
 notebooks/      # learning notebooks & experiments
+runs/           # tensorboard logs (created at runtime)
+checkpoints/    # saved models (created at runtime)
 ```
 
 ---

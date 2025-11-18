@@ -10,3 +10,10 @@ pytest
 ruff
 mypy
 pre-commit
+
+[jax]
+jax[cpu]
+jaxlib
+chex
+flax
+optax

@@ -33,6 +33,7 @@ class OptimizerConfig:
     rollout_length: int = 2048
     max_ep_length: int = 1000
     device: str = "cpu"
+    backend: str = "torch"
     log_interval: int = 10_000
     save_interval: int = 50_000
     save_path: str = "./checkpoints"
@@ -50,6 +51,7 @@ class PolicyOptimizerBase:
     def __init__(self, env_fn, config: OptimizerConfig):
         self.env_fn = env_fn
         self.config = config
+        self._setup_backend()
 
         # device
         self.device = torch.device(config.device)

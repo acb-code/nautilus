@@ -3,12 +3,16 @@ README.md
 pyproject.toml
 nautilus/__init__.py
 nautilus/algos/dqn/agent.py
-nautilus/algos/ppo/agent.py
+nautilus/algos/ppo/losses.py
 nautilus/core/buffers.py
 nautilus/core/networks.py
+nautilus/core/on_policy.py
+nautilus/core/policy_optimizer_base.py
 nautilus/core/samplers.py
+nautilus/envs/api_compat.py
 nautilus/runners/train_loop.py
 nautilus/tests/test_buffers.py
+nautilus/utils/collections.py
 nautilus/utils/logger.py
 nautilus/utils/seed.py
 nautilus_rl.egg-info/PKG-INFO

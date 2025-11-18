@@ -62,3 +62,39 @@ def test_cnn_shapes():
 
     assert action.shape == (2,)
     assert value.shape == (2, 1)
+
+
+def test_mlp_continuous_logprob_entropy_shapes():
+    """Continuous ActorCritic should sum log_prob/entropy over action dims."""
+
+    class MockEnv:
+        observation_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(3,))
+        action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(2,))
+
+    model = ActorCritic(MockEnv())
+    obs = torch.zeros((2, 3))
+
+    action, log_prob, entropy, value = model.get_action_and_value(obs)
+
+    assert action.shape == (2, 2)
+    assert log_prob.shape == (2,)
+    assert entropy.shape == (2,)
+    assert value.shape == (2,)
+
+
+def test_pixel_actor_continuous_shapes():
+    """PixelActorCritic should handle continuous actions and return summed log probs."""
+
+    class MockEnv:
+        observation_space = gym.spaces.Box(0, 255, (3, 84, 84), dtype=int)
+        action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(2,))
+
+    model = PixelActorCritic(MockEnv())
+    obs = torch.randint(0, 255, (2, 3, 84, 84)).float()
+
+    action, log_prob, entropy, value = model.get_action_and_value(obs)
+
+    assert action.shape == (2, 2)
+    assert log_prob.shape == (2,)
+    assert entropy.shape == (2,)
+    assert value.shape == (2, 1)

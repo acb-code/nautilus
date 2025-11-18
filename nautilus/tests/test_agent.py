@@ -20,7 +20,8 @@ def test_agent_update_step():
         env.num_envs = 1  # Pretend it's vectorized
         return env
 
-    config = PPOConfig(total_steps=100, train_pi_iter=1, train_v_iter=1)
+    # Use a large target_kl to avoid early stopping on synthetic data.
+    config = PPOConfig(total_steps=100, train_pi_iter=1, train_v_iter=1, target_kl=1e6)
     dummy_env = gym.make(env_id)
     network = ActorCritic(dummy_env)
 
@@ -52,3 +53,45 @@ def test_agent_update_step():
     # 5. Check weights changed
     new_weight = agent.ac.pi.backbone.net[0].weight.data
     assert not torch.allclose(old_weight, new_weight), "Weights did not update!"
+
+
+def test_agent_update_early_stop_logs_metrics():
+    """
+    Ensure metrics are populated even when early stopping prevents an update step.
+    """
+    env_id = "CartPole-v1"
+
+    def env_fn():
+        env = gym.make(env_id)
+        env.num_envs = 1
+        return env
+
+    # Force early stopping via tiny KL threshold
+    config = PPOConfig(total_steps=10, train_pi_iter=1, train_v_iter=0, target_kl=1e-8)
+    dummy_env = gym.make(env_id)
+    network = ActorCritic(dummy_env)
+    agent = PPOAgent(env_fn, network, config)
+
+    batch_size = 2
+    obs_dim = dummy_env.observation_space.shape[0]
+    batch = {
+        "obs": np.random.randn(batch_size, 1, obs_dim).astype(np.float32),
+        "actions": np.random.randint(0, 2, (batch_size, 1)),
+        "rewards": np.random.randn(batch_size, 1),
+        "dones": np.zeros((batch_size, 1)),
+        "infos": [
+            {"val": np.array([0.0]), "log_prob": np.array([-0.6])} for _ in range(batch_size)
+        ],
+    }
+
+    old_weight = agent.ac.pi.backbone.net[0].weight.data.clone()
+
+    losses = agent.compute_losses(batch)
+    agent.update_params(losses)
+
+    # Early stop should leave weights untouched, but metrics should still exist
+    new_weight = agent.ac.pi.backbone.net[0].weight.data
+    assert torch.allclose(old_weight, new_weight)
+    assert hasattr(agent, "latest_metrics")
+    for key in ["loss_pi", "loss_v", "kl"]:
+        assert key in agent.latest_metrics

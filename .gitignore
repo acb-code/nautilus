@@ -14,3 +14,6 @@ checkpoints/
 .DS_Store
 wandb/
 *.egg-info/
+*.pt
+*.png
+*.csv

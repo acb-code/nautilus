@@ -17,6 +17,9 @@ dependencies = [
   "pydantic>=2",
   "wandb",
   "pygame",
+  "matplotlib",
+  "seaborn",
+  "pandas"
 ]
 
 [project.optional-dependencies]

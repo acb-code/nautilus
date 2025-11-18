@@ -109,6 +109,21 @@ checkpoints/    # saved models (created at runtime)
 
 ---
 
+## 📓 Notebooks
+
+- **PPO on CartPole (Colab ready):** [Open in Colab](https://colab.research.google.com/github/acb-code/nautilus/blob/main/notebooks/colab_cartpole.ipynb)
+
+---
+
+## 🧰 Scripts and benchmarks
+
+- `scripts/benchmark_policy_gradient.py`: benchmarks PPO vs VPG on CartPole and saves a smoothed return plot.
+
+  ![Benchmark plot](benchmark_results_smoothed.png)
+
+---
+
+
 ## 📈 Logging & Tracking
 
 - **TensorBoard**: run training in one terminal, then in another:

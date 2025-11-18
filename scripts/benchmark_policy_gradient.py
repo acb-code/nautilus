@@ -14,7 +14,7 @@ from nautilus.core.networks import ActorCritic
 from nautilus.utils.envs import make_env
 
 
-def run_experiment(algo_name, agent_cls, total_steps=50000, seed=42):
+def run_experiment(algo_name, agent_cls, total_steps=200000, seed=42):
     print(f"🚀 Benchmarking {algo_name}...")
 
     # 1. Setup
@@ -88,7 +88,7 @@ def plot_results(all_data):
     # --- THE FIX: Apply Rolling Average ---
     # We group by seed and algorithm, then smooth the returns over 50 episodes
     df["smoothed_return"] = df.groupby(["algorithm", "seed"])["return"].transform(
-        lambda x: x.rolling(window=50, min_periods=1).mean()
+        lambda x: x.rolling(window=100, min_periods=1).mean()
     )
 
     plt.figure(figsize=(10, 6))
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     # Run for 2 seeds to get a standard deviation ribbon
     for seed in [1, 2]:
         for name, cls in experiments:
-            data = run_experiment(name, cls, total_steps=75000, seed=seed)
+            data = run_experiment(name, cls, total_steps=200000, seed=seed)
             all_results.extend(data)
 
     plot_results(all_results)

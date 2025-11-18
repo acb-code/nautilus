@@ -98,8 +98,11 @@ def main():
         env_factory(args.env_id, args.seed + i, i, args.capture_video, run_name)
         for i in range(args.num_envs)
     ]
-    envs = gym.vector.SyncVectorEnv(env_fns)
-
+    # Use Async for parallelism if we have more than 1 env
+    if args.num_envs > 1:
+        envs = gym.vector.AsyncVectorEnv(env_fns)
+    else:
+        envs = gym.vector.SyncVectorEnv(env_fns)
     # 4. Setup Network
     # We create a dummy env just to get shapes for initialization
     dummy_env = envs.envs[0] if hasattr(envs, "envs") else gym.make(args.env_id)

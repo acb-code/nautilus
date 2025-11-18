@@ -16,4 +16,5 @@ wandb/
 *.egg-info/
 *.pt
 *.png
+!benchmark_results_smoothed.png
 *.csv

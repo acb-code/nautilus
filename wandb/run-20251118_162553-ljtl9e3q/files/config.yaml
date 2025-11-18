@@ -1,0 +1,102 @@
+_wandb:
+    value:
+        cli_version: 0.23.0
+        code_path: code/nautilus/runners/ppo_runner.py
+        e:
+            inzk5d3hfc5ttpmulu44zhfgixbgpn2e:
+                args:
+                    - --env-id
+                    - CartPole-v1
+                    - --track
+                    - --wandb-project-name
+                    - my-rl-experiments
+                codePath: nautilus/runners/ppo_runner.py
+                codePathLocal: nautilus/runners/ppo_runner.py
+                cpu_count: 8
+                cpu_count_logical: 16
+                disk:
+                    /:
+                        total: "1081101176832"
+                        used: "48196689920"
+                email: alexander.braafladt@gmail.com
+                executable: /home/alex/miniconda3/envs/nautilus/bin/python
+                git:
+                    commit: 2772e0c5188ac32c933ac9e1a59cc2cb97abaeb7
+                    remote: https://github.com/acb-code/nautilus.git
+                host: alex-laptop
+                memory:
+                    total: "8173035520"
+                os: Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.39
+                program: /home/alex/code/nautilus/nautilus/runners/ppo_runner.py
+                python: CPython 3.11.13
+                root: /home/alex/code/nautilus
+                startedAt: "2025-11-18T15:25:53.777631Z"
+                writerId: inzk5d3hfc5ttpmulu44zhfgixbgpn2e
+        m: []
+        python_version: 3.11.13
+        t:
+            "1":
+                - 1
+                - 12
+            "2":
+                - 1
+                - 12
+            "3":
+                - 13
+                - 16
+                - 35
+                - 61
+            "4": 3.11.13
+            "5": 0.23.0
+            "12": 0.23.0
+            "13": linux-x86_64
+actor_hidden_sizes:
+    value:
+        - 64
+        - 64
+backend:
+    value: torch
+clip_ratio:
+    value: 0.2
+critic_hidden_sizes:
+    value:
+        - 64
+        - 64
+device:
+    value: cpu
+gamma:
+    value: 0.99
+lam:
+    value: 0.95
+log_interval:
+    value: 10000
+max_ep_length:
+    value: 1000
+pi_lr:
+    value: 0.0003
+rollout_length:
+    value: 2048
+run_name:
+    value: CartPole-v1__1__1763479553
+save_interval:
+    value: 50000
+save_path:
+    value: checkpoints/CartPole-v1__1__1763479553
+seed:
+    value: 1
+target_kl:
+    value: 0.01
+total_steps:
+    value: 500000
+track:
+    value: true
+train_pi_iter:
+    value: 80
+train_v_iter:
+    value: 80
+vf_lr:
+    value: 0.0003
+wandb_entity:
+    value: null
+wandb_project:
+    value: my-rl-experiments

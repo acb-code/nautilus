@@ -51,7 +51,10 @@ class Logger:
 
         # WandB handles TensorBoard sync automatically if configured,
         # but we can also log explicitly if needed.
-        # if self.use_wandb: wandb.log(metrics, step=step)
+        if self.use_wandb:
+            import wandb
+
+            wandb.log(metrics, step=step)
 
     def close(self):
         self.writer.close()

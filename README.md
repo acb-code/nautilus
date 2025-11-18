@@ -96,6 +96,28 @@ notebooks/      # learning notebooks & experiments
 
 ---
 
+## 📈 Logging & Tracking
+
+- **TensorBoard**: run training in one terminal, then in another:
+
+  ```bash
+  python nautilus/runners/ppo_runner.py --env-id CartPole-v1
+  tensorboard --logdir runs
+  ```
+
+- **Weights & Biases**: install `wandb` (`pip install wandb`) and set `WANDB_API_KEY`. Enable tracking with:
+
+  ```bash
+  python nautilus/runners/ppo_runner.py --env-id CartPole-v1 --track --wandb-project-name my-rl-experiments
+  ```
+
+  You can also pass `--wandb-entity <team>` to log to a shared org.
+  If you prefer, run `wandb login` once instead of exporting `WANDB_API_KEY`.
+
+Both TensorBoard and WandB logging are configured through `nautilus/utils/logger.py` and the runner flags.
+
+---
+
 ## 🧭 Learning roadmap
 
 | Stage | Concepts | Implementation Targets |

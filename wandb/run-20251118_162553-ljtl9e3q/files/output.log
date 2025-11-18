@@ -1,0 +1,37 @@
+🚀 Starting training on CartPole-v1 using cpu...
+[34m[1mwandb[0m: [33mWARNING[0m Step cannot be set when using tensorboard syncing. Please use `run.define_metric(...)` to define a custom metric to log your step values.
+[16384] Return: 8.29 | SPS: 1599 | loss_pi:-0.029 loss_v:0.204 kl:0.009 delta_loss_pi:-0.029
+Early stopping at step 16 due to reaching max KL.
+[24576] Return: 11.59 | SPS: 1816 | loss_pi:-0.021 loss_v:0.253 kl:0.016 delta_loss_pi:-0.021
+[32768] Return: 19.06 | SPS: 1908 | loss_pi:-0.024 loss_v:0.218 kl:0.012 delta_loss_pi:-0.024
+[40960] Return: 27.22 | SPS: 1964 | loss_pi:-0.020 loss_v:0.164 kl:0.012 delta_loss_pi:-0.020
+[57344] Return: 48.85 | SPS: 1930 | loss_pi:-0.007 loss_v:0.060 kl:0.009 delta_loss_pi:-0.007
+[65536] Return: 59.19 | SPS: 1933 | loss_pi:-0.004 loss_v:0.081 kl:0.003 delta_loss_pi:-0.004
+[73728] Return: 66.35 | SPS: 1981 | loss_pi:-0.005 loss_v:0.087 kl:0.005 delta_loss_pi:-0.005
+[81920] Return: 73.02 | SPS: 1986 | loss_pi:-0.003 loss_v:0.102 kl:0.005 delta_loss_pi:-0.003
+[90112] Return: 80.53 | SPS: 1996 | loss_pi:-0.002 loss_v:0.115 kl:0.003 delta_loss_pi:-0.002
+[106496] Return: 88.78 | SPS: 1994 | loss_pi:-0.002 loss_v:0.117 kl:0.003 delta_loss_pi:-0.002
+[114688] Return: 92.56 | SPS: 1944 | loss_pi:-0.003 loss_v:0.119 kl:0.003 delta_loss_pi:-0.003
+[122880] Return: 97.75 | SPS: 1918 | loss_pi:-0.001 loss_v:0.112 kl:0.002 delta_loss_pi:-0.001
+[131072] Return: 95.25 | SPS: 1939 | loss_pi:-0.001 loss_v:0.113 kl:0.002 delta_loss_pi:-0.001
+[147456] Return: 90.27 | SPS: 1919 | loss_pi:-0.002 loss_v:0.092 kl:0.003 delta_loss_pi:-0.002
+[155648] Return: 88.36 | SPS: 1873 | loss_pi:-0.002 loss_v:0.099 kl:0.002 delta_loss_pi:-0.002
+[163840] Return: 91.61 | SPS: 1886 | loss_pi:-0.002 loss_v:0.100 kl:0.005 delta_loss_pi:-0.002
+[172032] Return: 94.80 | SPS: 1891 | loss_pi:-0.001 loss_v:0.104 kl:0.004 delta_loss_pi:-0.001
+[180224] Return: 100.33 | SPS: 1877 | loss_pi:-0.002 loss_v:0.103 kl:0.004 delta_loss_pi:-0.002
+[196608] Return: 111.63 | SPS: 1895 | loss_pi:-0.001 loss_v:0.102 kl:0.004 delta_loss_pi:-0.001
+[204800] Return: 115.31 | SPS: 1902 | loss_pi:-0.002 loss_v:0.102 kl:0.002 delta_loss_pi:-0.002
+[212992] Return: 119.22 | SPS: 1904 | loss_pi:-0.001 loss_v:0.102 kl:0.004 delta_loss_pi:-0.001
+[221184] Return: 122.79 | SPS: 1908 | loss_pi:-0.001 loss_v:0.104 kl:0.002 delta_loss_pi:-0.001
+[237568] Return: 125.00 | SPS: 1917 | loss_pi:-0.002 loss_v:0.099 kl:0.004 delta_loss_pi:-0.002
+[245760] Return: 125.00 | SPS: 1925 | loss_pi:-0.002 loss_v:0.103 kl:0.003 delta_loss_pi:-0.002
+[253952] Return: 124.74 | SPS: 1915 | loss_pi:-0.002 loss_v:0.099 kl:0.003 delta_loss_pi:-0.002
+[262144] Return: 123.61 | SPS: 1903 | loss_pi:-0.001 loss_v:0.103 kl:0.001 delta_loss_pi:-0.001
+[270336] Return: 121.41 | SPS: 1908 | loss_pi:-0.003 loss_v:0.093 kl:0.002 delta_loss_pi:-0.003
+[286720] Return: 118.27 | SPS: 1916 | loss_pi:-0.002 loss_v:0.102 kl:0.002 delta_loss_pi:-0.002
+[294912] Return: 116.96 | SPS: 1909 | loss_pi:-0.002 loss_v:0.100 kl:0.002 delta_loss_pi:-0.002
+[303104] Return: 115.62 | SPS: 1889 | loss_pi:-0.002 loss_v:0.100 kl:0.002 delta_loss_pi:-0.002
+[311296] Return: 115.86 | SPS: 1880 | loss_pi:-0.001 loss_v:0.106 kl:0.001 delta_loss_pi:-0.001
+[327680] Return: 118.40 | SPS: 1873 | loss_pi:-0.003 loss_v:0.119 kl:0.003 delta_loss_pi:-0.003
+[335872] Return: 118.98 | SPS: 1860 | loss_pi:-0.002 loss_v:0.117 kl:0.002 delta_loss_pi:-0.002
+Training interrupted. Saving checkpoint...

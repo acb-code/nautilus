@@ -20,6 +20,19 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "mypy", "pre-commit"]
 
+jax = [
+  # Using the official PyPI package `jax` will install the CPU-only version.
+  # Note: The JAX ecosystem often requires specific NumPy versions.
+  # For the safest installation, users are often directed to use the official
+  # JAX installation instructions/scripts, but this is the PyPI way:
+  "jax[cpu]", # or simply "jax" (it defaults to CPU)
+  "jaxlib",
+  # Often required dependencies for JAX-based RL libraries
+  "chex",
+  "flax",
+  "optax",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

@@ -6,30 +6,59 @@
 
 ## 🚀 Quickstart
 
-```bash
-# Create and activate a new environment
-conda create -n nautilus python=3.11
-conda activate nautilus
+### Using Conda (Recommended for PyTorch/CUDA)
 
-# Optional: install PyTorch with CUDA if available
-# (Choose correct CUDA toolkit from https://pytorch.org/get-started/locally/)
-conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+Using Conda is generally recommended when dealing with environments that require specific binary dependencies like PyTorch and CUDA.
 
-# Then install the repo and dev tools
-pip install -e .[dev]
-pre-commit install
+1.  **Create and activate a new environment:**
+    ```bash
+    conda create -n nautilus python=3.11
+    conda activate nautilus
+    ```
 
-## Optional for venv instead
-# Create and activate environment
-python -m venv .venv
-source .venv/bin/activate       # Windows: .venv\Scripts\activate
+2.  **Optional: Install PyTorch with CUDA if available** (or without CUDA if preferred).
+    *(Choose the correct CUDA toolkit from the official PyTorch website.)*
+    ```bash
+    conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+    ```
 
-# Install dependencies and dev tools
-pip install -U pip
-pip install -e .[dev]
-pre-commit install
-## End Optional
-```
+3.  **Install the repository and development tools:**
+    ```bash
+    pip install -e .[dev]
+    pre-commit install
+    ```
+
+4.  **Optional: Install JAX dependencies (for JAX-based algorithms):**
+    This step installs the JAX backend (defaults to CPU). For GPU installation, refer to the official JAX documentation.
+    ```bash
+    pip install -e .[jax]
+    ```
+
+---
+
+### Using Venv
+
+You can also use the standard Python virtual environment (`venv`).
+
+1.  **Create and activate environment:**
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate       # Windows: .venv\Scripts\activate
+    ```
+
+2.  **Install dependencies and dev tools:**
+    ```bash
+    pip install -U pip
+    pip install -e .[dev]
+    pre-commit install
+    ```
+
+3.  **Optional: Install JAX dependencies (for JAX-based algorithms):**
+    ```bash
+    pip install -e .[jax]
+    ```
+
+---
 
 Run your first agent:
 

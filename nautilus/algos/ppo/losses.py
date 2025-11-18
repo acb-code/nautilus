@@ -5,8 +5,14 @@ All losses operate on torch tensors and do not depend on any class.
 This makes them reusable by any PPO-style trainer.
 """
 
+import jax.numpy as jnp
+import numpy as np  # for np.pi and np.e
 import torch
 import torch.nn.functional as F
+
+# Define PI and E for JAX equivalent of torch.pi and torch.e
+JAX_PI = np.pi
+JAX_E = np.e
 
 # ---------------------------------------------------------------------------
 # 1. Value loss
@@ -123,4 +129,127 @@ def ppo_policy_loss(
     clipped = torch.clamp(ratio, 1 - clip_ratio, 1 + clip_ratio) * advantages
 
     loss = -torch.mean(torch.min(unclipped, clipped))
+    return loss
+
+
+# ---------------------------------------------------------------------------
+# 1. Value loss (JAX)
+# ---------------------------------------------------------------------------
+
+
+def value_loss_jax(
+    values: jnp.ndarray,
+    target_values: jnp.ndarray,
+    clip: float = None,
+):
+    """
+    Standard MSE value loss, or clipped value loss if `clip` is provided.
+    (JAX implementation)
+    """
+    if clip is None or clip < 0:
+        # Note: JAX doesn't have a direct MSE loss in jnp,
+        # so we implement it as the mean of squared differences.
+        return jnp.mean((values - target_values) ** 2)
+
+    # Clipped value loss (PPO2 style)
+    values_clipped = jnp.clip(
+        values,
+        target_values - clip,
+        target_values + clip,
+    )
+    loss1 = (values - target_values) ** 2
+    loss2 = (values_clipped - target_values) ** 2
+    # jnp.maximum is the JAX equivalent of torch.max for element-wise comparison
+    return jnp.mean(jnp.maximum(loss1, loss2))
+
+
+# ---------------------------------------------------------------------------
+# 2. Entropy bonuses (JAX)
+# ---------------------------------------------------------------------------
+
+
+def entropy_discrete_jax(policy_probs: jnp.ndarray, eps: float = 1e-8):
+    """
+    Entropy for a categorical distribution (JAX implementation).
+    """
+    # jnp.clip is the JAX equivalent of torch.clamp
+    policy_probs = jnp.clip(policy_probs, eps, 1.0)
+    # jnp.sum and jnp.log are JAX equivalents
+    return -jnp.sum(policy_probs * jnp.log(policy_probs), axis=-1).mean()
+
+
+def entropy_gaussian_jax(std: jnp.ndarray):
+    """
+    Entropy of a factorized Gaussian distribution with diagonal std. (JAX implementation)
+    """
+    # Note: Using numpy's PI and E constants, as JAX's jnp doesn't expose them directly
+    # and they are just constants for the calculation.
+    return jnp.mean(jnp.log(std) + 0.5 * jnp.log(2 * JAX_PI * JAX_E))
+
+
+# ---------------------------------------------------------------------------
+# 3. KL divergence (JAX)
+# ---------------------------------------------------------------------------
+
+
+def kl_discrete_jax(old_probs: jnp.ndarray, new_probs: jnp.ndarray, eps: float = 1e-8):
+    # jnp.clip is the JAX equivalent of torch.clamp
+    old = jnp.clip(old_probs, eps, 1.0)
+    new = jnp.clip(new_probs, eps, 1.0)
+    # jnp.sum and jnp.log are JAX equivalents
+    return jnp.sum(old * (jnp.log(old) - jnp.log(new)), axis=-1).mean()
+
+
+def kl_gaussian_jax(
+    mu_old: jnp.ndarray,
+    std_old: jnp.ndarray,
+    mu_new: jnp.ndarray,
+    std_new: jnp.ndarray,
+    eps: float = 1e-8,
+):
+    """
+    KL divergence between diagonal Gaussians (JAX implementation).
+    """
+    # jnp.power and standard operators are used
+    var_old = jnp.power(std_old, 2)
+    var_new = jnp.power(std_new, 2)
+
+    return jnp.mean(
+        jnp.sum(
+            jnp.log(std_new / (std_old + eps))
+            + (var_old + jnp.power((mu_old - mu_new), 2)) / (2 * var_new + eps)
+            - 0.5,
+            axis=-1,
+        )
+    )
+
+
+def approximate_kl_jax(old_log_probs, new_log_probs):
+    """Spinning Up style approximate KL (JAX implementation)."""
+    return (old_log_probs - new_log_probs).mean()
+
+
+# ---------------------------------------------------------------------------
+# 4. PPO policy loss (JAX)
+# ---------------------------------------------------------------------------
+
+
+def ppo_policy_loss_jax(
+    new_log_probs: jnp.ndarray,
+    old_log_probs: jnp.ndarray,
+    advantages: jnp.ndarray,
+    clip_ratio: float,
+):
+    """
+    PPO clipped surrogate objective (JAX implementation).
+    """
+    # jnp.exp is the JAX equivalent of torch.exp
+    ratio = jnp.exp(new_log_probs - old_log_probs)
+
+    unclipped = ratio * advantages
+    # jnp.clip is the JAX equivalent of torch.clamp
+    clipped = jnp.clip(ratio, 1 - clip_ratio, 1 + clip_ratio) * advantages
+
+    # jnp.minimum is the JAX equivalent of torch.min for element-wise comparison
+    loss = -jnp.mean(jnp.minimum(unclipped, clipped))
     return loss

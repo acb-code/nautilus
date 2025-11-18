@@ -1,0 +1,14 @@
+# PPO config for LunarLander-v3
+seed: 1
+env_id: LunarLander-v3
+num_envs: 16
+total_steps: 3000000
+pi_lr: 0.00025
+vf_lr: 0.00025
+clip_ratio: 0.2
+target_kl: 0.01
+train_pi_iter: 2
+train_v_iter: 4
+rollout_length: 2048
+normalize: true
+track: false

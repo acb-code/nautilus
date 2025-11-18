@@ -1,5 +1,8 @@
 import argparse
+import json
 import time
+from dataclasses import asdict
+from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
@@ -20,6 +23,12 @@ def parse_args():
     # Experiment Settings
     parser.add_argument(
         "--env-id", type=str, default="CartPole-v1", help="the id of the environment"
+    )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="path to a JSON/YAML config file (values overridden by CLI flags)",
     )
     parser.add_argument(
         "--mode",
@@ -65,23 +74,66 @@ def parse_args():
     return args
 
 
+def load_config_file(path: Path) -> dict:
+    if not path:
+        return {}
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+
+    suffix = path.suffix.lower()
+    if suffix in {".yml", ".yaml"}:
+        try:
+            import yaml
+        except ImportError as exc:  # pragma: no cover - optional dep
+            raise ImportError("Install pyyaml to load YAML configs.") from exc
+        with path.open("r") as f:
+            return yaml.safe_load(f) or {}
+    if suffix == ".json":
+        with path.open("r") as f:
+            return json.load(f) or {}
+
+    raise ValueError(f"Unsupported config file type: {suffix}")
+
+
 def main():
     args = parse_args()
-    run_name = f"{args.env_id}__{args.seed}__{int(time.time())}"
 
-    # 1. Initialize Config
-    config = PPOConfig(
+    # 1. Initialize Config (file baseline + CLI overrides)
+    config_kwargs = asdict(PPOConfig())
+    config_field_names = set(PPOConfig.__dataclass_fields__.keys())
+    file_cfg = load_config_file(args.config) if args.config else {}
+
+    # Apply runner-specific overrides from config file (env_id, num_envs, etc.)
+    if file_cfg:
+        if "env_id" in file_cfg:
+            args.env_id = file_cfg["env_id"]
+        if "num_envs" in file_cfg:
+            args.num_envs = file_cfg["num_envs"]
+
+    # Keep only fields that belong to PPOConfig
+    if file_cfg:
+        for k, v in file_cfg.items():
+            if k in config_field_names:
+                config_kwargs[k] = v
+
+    normalize_flag = config_kwargs.get("normalize", False)
+    normalize_flag = args.normalize or normalize_flag
+
+    # Finalize run name after env_id/seed are set
+    run_name = f"{args.env_id}__{args.seed}__{int(time.time())}"
+    config_kwargs.update(
         seed=args.seed,
         total_steps=args.total_steps,
         pi_lr=args.lr,
         vf_lr=args.lr,
         save_path=f"checkpoints/{run_name}",
-        # Pass Logging Args
         track=args.track,
         wandb_project=args.wandb_project_name,
         wandb_entity=args.wandb_entity,
         run_name=run_name,
+        normalize=normalize_flag,
     )
+    config = PPOConfig(**config_kwargs)
 
     # 2. Setup Environment Factory
     # Detect if Atari/Pixels or Vector/State based on env ID or custom logic
@@ -94,7 +146,15 @@ def main():
         normalize_flag = args.normalize
 
         def env_factory(env_id, seed, idx, capture_video, run_name):
-            return make_env(env_id, seed, idx, capture_video, run_name, normalize=normalize_flag)
+            return make_env(
+                env_id,
+                seed,
+                idx,
+                capture_video,
+                run_name,
+                normalize=normalize_flag,
+                render_mode=None,
+            )
 
         NetworkClass = ActorCritic  # Or ActorCriticShared if you prefer
 
@@ -140,20 +200,26 @@ def main():
 
     elif args.mode == "test":
         print(f"🎥 Starting evaluation on {args.env_id}...")
-        evaluate(agent, args.env_id, args.seed, run_name)
+        evaluate(agent, args.env_id, args.seed, run_name, normalize=normalize_flag)
 
     envs.close()
 
 
-def evaluate(agent, env_id, seed, run_name):
+def evaluate(agent, env_id, seed, run_name, normalize: bool):
     """
     Runs a single instance of the environment for visualization/testing.
     """
-    # Minimal eval env with human rendering; normalization is disabled for eval by default.
-    env = gym.make(env_id, render_mode="human")
-    env = gym.wrappers.RecordEpisodeStatistics(env)
-    if isinstance(env.action_space, gym.spaces.Box):
-        env = gym.wrappers.ClipAction(env)
+    # Recreate env with optional normalization and human render for visualization.
+    env_fn = make_env(
+        env_id,
+        seed,
+        0,
+        capture_video=False,
+        run_name=run_name,
+        normalize=normalize,
+        render_mode="human",
+    )
+    env = env_fn()
 
     obs, _ = env.reset(seed=seed)
     done = False

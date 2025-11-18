@@ -164,9 +164,12 @@ class PPOAgent(PolicyOptimizerBase):
                 clip_ratio=self.config.clip_ratio,
             )
 
-            # Add Entropy Bonus (Optional)
-            # ent = dist.entropy().mean()
-            # loss_pi = loss_pi - 0.01 * ent
+            # Add Entropy Bonus to encourage exploration
+            ent = dist.entropy()
+            if ent.dim() > 1:
+                ent = ent.sum(-1)
+            ent_bonus = 0.01 * ent.mean()
+            loss_pi = loss_pi - ent_bonus
 
             loss_pi.backward()
             self.pi_optimizer.step()

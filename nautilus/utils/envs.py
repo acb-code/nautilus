@@ -9,15 +9,24 @@ from gymnasium.wrappers import (
 )
 
 
-def make_env(env_id, seed, idx, capture_video, run_name, gamma=0.99, normalize: bool = True):
+def make_env(
+    env_id,
+    seed,
+    idx,
+    capture_video,
+    run_name,
+    gamma=0.99,
+    normalize: bool = True,
+    render_mode: str | None = None,
+):
     """
     Factory function to create a single environment instance.
     """
 
     def thunk():
         # 1. Create Base Env
-        render_mode = "rgb_array" if capture_video and idx == 0 else None
-        env = gym.make(env_id, render_mode=render_mode)
+        effective_render_mode = render_mode or ("rgb_array" if capture_video and idx == 0 else None)
+        env = gym.make(env_id, render_mode=effective_render_mode)
 
         if capture_video and idx == 0:
             env = RecordVideo(env, f"videos/{run_name}", episode_trigger=lambda x: x % 1000 == 0)

@@ -20,3 +20,4 @@ class PPOConfig(OptimizerConfig):
     # Architecture / Setup
     actor_hidden_sizes: tuple = (64, 64)
     critic_hidden_sizes: tuple = (64, 64)
+    normalize: bool = False

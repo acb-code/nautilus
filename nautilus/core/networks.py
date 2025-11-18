@@ -109,12 +109,35 @@ class ActorCritic(nn.Module):
             # Continuous
             act_dim = env.action_space.shape[0]
             self.pi = GaussianActor(obs_dim, act_dim, hidden_sizes, activation)
+            self.is_continuous = True
         except (IndexError, AttributeError):
             # Discrete
             act_dim = env.action_space.n
             self.pi = CategoricalActor(obs_dim, act_dim, hidden_sizes, activation)
+            self.is_continuous = False
 
         self.v = Critic(obs_dim, hidden_sizes, activation)
+
+    def get_action_and_value(self, x, action=None):
+        """
+        Convenience helper to sample or evaluate an action alongside value estimates.
+        Mirrors the PixelActorCritic API for tests and agents.
+        """
+        dist = self.pi(x)
+        if action is None:
+            action = dist.sample()
+
+        log_prob = dist.log_prob(action)
+        entropy = dist.entropy()
+
+        # For continuous actions, sum across dimensions to get scalar stats per sample.
+        if self.is_continuous:
+            log_prob = log_prob.sum(-1)
+            entropy = entropy.sum(-1)
+
+        value = self.v(x)
+
+        return action, log_prob, entropy, value
 
 
 class NatureCNN(nn.Module):

@@ -23,6 +23,7 @@ import numpy as np
 import torch
 
 from nautilus.envs.api_compat import reset_env, step_env
+from nautilus.utils.logger import Logger
 
 
 @dataclass
@@ -36,6 +37,12 @@ class OptimizerConfig:
     log_interval: int = 10_000
     save_interval: int = 50_000
     save_path: str = "./checkpoints"
+
+    # --- Logging Params ---
+    track: bool = False
+    wandb_project: str = "nautilus-project"
+    wandb_entity: str = None
+    run_name: str = "test_run"
 
 
 class PolicyOptimizerBase:
@@ -60,6 +67,17 @@ class PolicyOptimizerBase:
         # Logs
         self.ep_returns = []
         self.ep_lengths = []
+
+        # Setup Logger
+        self.logger = Logger(
+            log_dir=f"runs/{config.run_name}",
+            config=config,
+            use_wandb=config.track,
+            run_name=config.run_name,
+        )
+
+        # Track Steps Per Second (SPS)
+        self.start_time = 0
 
     def _setup_backend(self):
         if self.config.backend == "torch":
@@ -147,6 +165,10 @@ class PolicyOptimizerBase:
         )
 
     def train(self):
+        import time
+
+        self.start_time = time.time()  # Start timer
+
         while self.total_steps < self.config.total_steps:
             batch = self.collect_rollout()
             losses = self.compute_losses(batch)
@@ -165,11 +187,35 @@ class PolicyOptimizerBase:
                 self.save_checkpoint()
 
     def log_status(self, losses: dict[str, torch.Tensor]):
-        avg_return = np.mean(self.ep_returns[-10:]) if self.ep_returns else 0
-        loss_str = " ".join([
-            f"{k}:{v:.4f}" for k, v in losses.items() if isinstance(v, float | int)
-        ])
-        print(f"[{self.total_steps}] AvgReturn: {avg_return:.1f} {loss_str}")
+        import time
+
+        # 1. Calculate Performance Metrics
+        avg_return = np.mean(self.ep_returns[-100:]) if self.ep_returns else 0
+        avg_length = np.mean(self.ep_lengths[-100:]) if self.ep_lengths else 0
+        sps = int(self.total_steps / (time.time() - self.start_time))
+
+        # 2. Prepare Dictionary
+        metrics = {
+            "charts/episodic_return": avg_return,
+            "charts/episodic_length": avg_length,
+            "charts/SPS": sps,
+        }
+
+        # Add Algorithm specific losses (flattened)
+        for k, v in losses.items():
+            if isinstance(v, float | int):
+                metrics[f"losses/{k}"] = v
+            elif hasattr(v, "item"):
+                metrics[f"losses/{k}"] = v.item()
+
+        # 3. Log to Backend
+        self.logger.log(metrics, self.total_steps)
+
+        # 4. Print to Console (for sanity check)
+        print(
+            f"[{self.total_steps}] Return: {avg_return:.2f} | SPS: {sps} | "
+            + " ".join([f"{k}:{v:.3f}" for k, v in losses.items() if isinstance(v, float | int)])
+        )
 
     def save_checkpoint(self):
         pass

@@ -11,6 +11,7 @@ Requires-Dist: numpy
 Requires-Dist: tqdm
 Requires-Dist: tensorboard
 Requires-Dist: pydantic>=2
+Requires-Dist: wandb
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: ruff; extra == "dev"

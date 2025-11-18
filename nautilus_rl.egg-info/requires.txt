@@ -4,6 +4,7 @@ numpy
 tqdm
 tensorboard
 pydantic>=2
+wandb
 
 [dev]
 pytest

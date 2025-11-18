@@ -40,6 +40,19 @@ def parse_args():
     parser.add_argument("--total-steps", type=int, default=500000)
     parser.add_argument("--lr", type=float, default=3e-4)
 
+    # Logging Args
+    parser.add_argument(
+        "--track",
+        action="store_true",
+        help="if toggled, this experiment will be tracked with Weights and Biases",
+    )
+    parser.add_argument(
+        "--wandb-project-name", type=str, default="nautilus-ppo", help="the wandb's project name"
+    )
+    parser.add_argument(
+        "--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project"
+    )
+
     args = parser.parse_args()
     return args
 
@@ -55,6 +68,11 @@ def main():
         pi_lr=args.lr,
         vf_lr=args.lr,
         save_path=f"checkpoints/{run_name}",
+        # Pass Logging Args
+        track=args.track,
+        wandb_project=args.wandb_project_name,
+        wandb_entity=args.wandb_entity,
+        run_name=run_name,
     )
 
     # 2. Setup Environment Factory

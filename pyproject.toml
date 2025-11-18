@@ -15,6 +15,7 @@ dependencies = [
   "tqdm",
   "tensorboard",
   "pydantic>=2",
+  "wandb",
 ]
 
 [project.optional-dependencies]

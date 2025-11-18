@@ -135,6 +135,8 @@ class PPOAgent(PolicyOptimizerBase):
         logp_old = batch_tensors["logp_old"]
 
         # --- Policy Update ---
+        loss_pi = torch.tensor(0.0, device=self.device)
+        kl = torch.tensor(0.0, device=self.device)
         for i in range(self.config.train_pi_iter):
             self.pi_optimizer.zero_grad()
 
@@ -164,6 +166,7 @@ class PPOAgent(PolicyOptimizerBase):
             self.pi_optimizer.step()
 
         # --- Value Update ---
+        loss_v = torch.tensor(0.0, device=self.device)
         for _i in range(self.config.train_v_iter):
             self.v_optimizer.zero_grad()
 

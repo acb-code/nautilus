@@ -97,14 +97,9 @@ def compute_gae(
     num_steps = rewards.shape[0]
 
     for t in reversed(range(num_steps)):
-        if t == num_steps - 1:
-            # Last step: use the bootstrap arguments provided
-            next_non_terminal = 1.0 - next_done
-            next_val = next_value
-        else:
-            # Standard step: look at t+1
-            next_non_terminal = 1.0 - dones[t + 1]
-            next_val = values[t + 1]
+        # If the trajectory ended at timestep t, we should not bootstrap further.
+        next_non_terminal = 1.0 - (next_done if t == num_steps - 1 else dones[t])
+        next_val = next_value if t == num_steps - 1 else values[t + 1]
 
         # Delta = r_t + gamma * V(s_{t+1}) * (1-d_{t+1}) - V(s_t)
         delta = rewards[t] + gamma * next_val * next_non_terminal - values[t]

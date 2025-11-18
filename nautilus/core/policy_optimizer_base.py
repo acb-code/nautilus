@@ -22,6 +22,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from nautilus.core.on_policy import OnPolicyBuffer
 from nautilus.envs.api_compat import reset_env, step_env
 from nautilus.utils.logger import Logger
 
@@ -59,6 +60,7 @@ class PolicyOptimizerBase:
 
         # Determine number of environments (1 if standard, N if vectorized)
         self.num_envs = getattr(self.env, "num_envs", 1)
+        self.rollout_buffer = OnPolicyBuffer(config.rollout_length, self.num_envs)
 
         self._seed_everything(config.seed)
 
@@ -107,11 +109,7 @@ class PolicyOptimizerBase:
         """
         Collects a rollout. Handles both Vectorized and Standard environments.
         """
-        obs_buf = []
-        actions_buf = []
-        rewards_buf = []
-        dones_buf = []
-        infos_buf = []
+        self.rollout_buffer.reset()
 
         for _t in range(self.config.rollout_length):
             # 1. Select Action
@@ -127,11 +125,13 @@ class PolicyOptimizerBase:
             done = np.logical_or(terminated, truncated)
 
             # 3. Store Data
-            obs_buf.append(self.obs)
-            actions_buf.append(action)
-            rewards_buf.append(reward)
-            dones_buf.append(done)
-            infos_buf.append(info)
+            self.rollout_buffer.add(
+                obs=self.obs,
+                action=action,
+                reward=reward,
+                done=done,
+                info=info,
+            )
 
             # FIX 2: Log Episode Stats via 'final_info'
             # Gymnasium VectorEnvs auto-reset. When an episode finishes,
@@ -156,13 +156,7 @@ class PolicyOptimizerBase:
             # Increment total steps by the number of parallel environments
             self.total_steps += self.num_envs
 
-        return dict(
-            obs=np.array(obs_buf),
-            actions=np.array(actions_buf),
-            rewards=np.array(rewards_buf),
-            dones=np.array(dones_buf),
-            infos=infos_buf,
-        )
+        return self.rollout_buffer.get()
 
     def train(self):
         import time

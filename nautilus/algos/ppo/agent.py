@@ -76,7 +76,11 @@ class PPOAgent(PolicyOptimizerBase):
         # Convert other numpy arrays
         rews = batch["rewards"]
         dones = batch["dones"].astype(np.float32)
-        vals = np.array([i["val"] for i in batch["infos"]])  # Shape (T, N)
+        vals = (
+            np.asarray(batch["values"])
+            if "values" in batch and batch["values"] is not None
+            else np.array([i["val"] for i in batch["infos"]])
+        )
 
         # 2. Get Bootstrap Value
         with torch.no_grad():
@@ -87,18 +91,25 @@ class PPOAgent(PolicyOptimizerBase):
             )
 
         # 3. Compute GAE (Vectorized) - Returns Numpy
-        advs = compute_gae(
-            rewards=rews,
-            values=vals,
-            dones=dones,
-            gamma=self.config.gamma,
-            lam=self.config.lam,
-            next_value=last_val,
-            next_done=np.zeros_like(last_val),
-        )
+        if "advantages" in batch and batch.get("advantages") is not None:
+            advs = np.asarray(batch["advantages"])
+        else:
+            advs = compute_gae(
+                rewards=rews,
+                values=vals,
+                dones=dones,
+                gamma=self.config.gamma,
+                lam=self.config.lam,
+                next_value=last_val,
+                next_done=np.zeros_like(last_val),
+            )
 
         # 4. Compute Returns
-        rets = advs + vals
+        rets = (
+            np.asarray(batch["returns"])
+            if "returns" in batch and batch.get("returns") is not None
+            else advs + vals
+        )
 
         # 5. Flatten and Prepare Tensors
 
@@ -110,7 +121,11 @@ class PPOAgent(PolicyOptimizerBase):
             act_flat = torch.as_tensor(actions.flatten(), device=self.device)
 
         # LogProbs
-        logprobs = np.array([i["log_prob"] for i in batch["infos"]])
+        logprobs = (
+            np.asarray(batch["log_probs"])
+            if "log_probs" in batch and batch["log_probs"] is not None
+            else np.array([i["log_prob"] for i in batch["infos"]])
+        )
         logp_old_flat = torch.as_tensor(logprobs.flatten(), dtype=torch.float32, device=self.device)
 
         # Returns

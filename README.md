@@ -94,6 +94,17 @@ Logs go to `runs/{env}__{seed}__{timestamp}/` and checkpoints to `checkpoints/{e
 
 ---
 
+## 🗂️ Config files
+
+- Load YAML/JSON configs with `--config`; CLI flags still override fields like `--lr` or `--total-steps`.
+- LunarLander recipe: `nautilus/configs/lunarlander_ppo.yaml` (16 envs, 3M steps, 0.00025 lr, normalization + WandB tracking on).
+- Train with the file: `python nautilus/runners/ppo_runner.py --config nautilus/configs/lunarlander_ppo.yaml`
+- Override on top: `python nautilus/runners/ppo_runner.py --config nautilus/configs/lunarlander_ppo.yaml --total-steps 1000000 --lr 0.0003 --wandb-project-name my-project`
+- Test a saved run: `python nautilus/runners/ppo_runner.py --config nautilus/configs/lunarlander_ppo.yaml --mode test --checkpoint checkpoints/LunarLander-v3__1__TIMESTAMP.pt`
+- Copy the file to create your own config (any PPOConfig field is valid).
+
+---
+
 ## ▶️ Train and test quick examples
 
 - **Train PPO on CartPole (100k steps, 4 envs):**

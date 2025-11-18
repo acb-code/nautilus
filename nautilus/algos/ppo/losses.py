@@ -66,7 +66,9 @@ def entropy_gaussian(std: torch.Tensor):
     """
     Entropy of a factorized Gaussian distribution with diagonal std.
     """
-    return torch.mean(torch.log(std) + 0.5 * torch.log(2 * torch.pi * torch.e))
+    # Keep constants on the same device/dtype as std to avoid type errors
+    constant = torch.tensor(2 * torch.pi * torch.e, device=std.device, dtype=std.dtype)
+    return torch.mean(torch.log(std) + 0.5 * torch.log(constant))
 
 
 # ---------------------------------------------------------------------------

@@ -49,8 +49,8 @@ def parse_args():
     )
 
     # Mapping args to Config fields (Simplified)
-    parser.add_argument("--total-steps", type=int, default=500000)
-    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--total-steps", type=int, default=None)
+    parser.add_argument("--lr", type=float, default=None)
 
     # Logging Args
     parser.add_argument(
@@ -59,7 +59,7 @@ def parse_args():
         help="if toggled, this experiment will be tracked with Weights and Biases",
     )
     parser.add_argument(
-        "--wandb-project-name", type=str, default="nautilus-ppo", help="the wandb's project name"
+        "--wandb-project-name", type=str, default=None, help="the wandb's project name"
     )
     parser.add_argument(
         "--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project"
@@ -121,15 +121,28 @@ def main():
 
     # Finalize run name after env_id/seed are set
     run_name = f"{args.env_id}__{args.seed}__{int(time.time())}"
+    lr_override = args.lr is not None
+    total_steps_override = args.total_steps is not None
+    track_flag = config_kwargs.get("track", False) or args.track
+    wandb_project = (
+        args.wandb_project_name
+        if args.wandb_project_name is not None
+        else config_kwargs.get("wandb_project")
+    )
+    wandb_entity = (
+        args.wandb_entity if args.wandb_entity is not None else config_kwargs.get("wandb_entity")
+    )
     config_kwargs.update(
         seed=args.seed,
-        total_steps=args.total_steps,
-        pi_lr=args.lr,
-        vf_lr=args.lr,
+        total_steps=config_kwargs.get("total_steps")
+        if not total_steps_override
+        else args.total_steps,
+        pi_lr=config_kwargs.get("pi_lr") if not lr_override else args.lr,
+        vf_lr=config_kwargs.get("vf_lr") if not lr_override else args.lr,
         save_path=f"checkpoints/{run_name}",
-        track=args.track,
-        wandb_project=args.wandb_project_name,
-        wandb_entity=args.wandb_entity,
+        track=track_flag,
+        wandb_project=wandb_project,
+        wandb_entity=wandb_entity,
         run_name=run_name,
         normalize=normalize_flag,
     )

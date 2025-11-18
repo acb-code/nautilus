@@ -202,7 +202,7 @@ class PPOAgent(PolicyOptimizerBase):
                 ent = dist.entropy()
                 if ent.dim() > 1:
                     ent = ent.sum(-1)
-                ent_bonus = 0.01 * ent.mean()
+                ent_bonus = self.config.entropy_coef * ent.mean()
                 loss_pi = loss_pi - ent_bonus
 
                 loss_pi.backward()

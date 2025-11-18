@@ -8,10 +8,11 @@ vf_lr: 0.00025
 clip_ratio: 0.2
 target_kl: 0.01
 lr_decay: true
+entropy_coef: 0.01
 minibatch_size: 512
 update_epochs: 4
-train_pi_iter: 1
-train_v_iter: 1
+train_pi_iter: 4
+train_v_iter: 4
 rollout_length: 1024
 normalize: true
 track: true

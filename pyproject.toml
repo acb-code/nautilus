@@ -27,8 +27,8 @@ dependencies = [
 dev = ["pytest", "ruff", "mypy", "pre-commit"]
 
 envs = [
-  "gymnasium[box2d]",
-  "box2d-py",
+  "gymnasium",
+  "box2d",
   "swig",
 ]
 

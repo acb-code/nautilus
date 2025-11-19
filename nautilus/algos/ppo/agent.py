@@ -3,14 +3,11 @@ from typing import Any
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import torch.optim as optim
 
 from nautilus.algos.ppo.config import PPOConfig
-from nautilus.algos.ppo.losses import (
-    approximate_kl,
-    ppo_policy_loss,
-    value_loss,
-)
+from nautilus.algos.ppo.losses import ppo_policy_loss
 
 # Import the functional utilities you defined previously
 from nautilus.core.on_policy import (
@@ -35,8 +32,9 @@ class PPOAgent(PolicyOptimizerBase):
         self.ac = actor_critic_module.to(self.device)
 
         # Set up optimizers
-        self.pi_optimizer = optim.Adam(self.ac.pi.parameters(), lr=config.pi_lr)
-        self.v_optimizer = optim.Adam(self.ac.v.parameters(), lr=config.vf_lr)
+        adam_kwargs = {"eps": 1e-5}
+        self.pi_optimizer = optim.Adam(self.ac.pi.parameters(), lr=config.pi_lr, **adam_kwargs)
+        self.v_optimizer = optim.Adam(self.ac.v.parameters(), lr=config.vf_lr, **adam_kwargs)
         self._pi_lr_init = config.pi_lr
         self._vf_lr_init = config.vf_lr
 
@@ -56,6 +54,10 @@ class PPOAgent(PolicyOptimizerBase):
             else:
                 action = dist.sample()
                 log_prob = dist.log_prob(action)
+
+            # Sum log_probs for continuous actions to get scalar per sample
+            if log_prob.dim() > 1:
+                log_prob = log_prob.sum(-1)
 
             # Forward pass through critic (needed for GAE later)
             value = self.ac.v(obs_tensor)
@@ -94,6 +96,8 @@ class PPOAgent(PolicyOptimizerBase):
         if "advantages" in batch and batch.get("advantages") is not None:
             advs = np.asarray(batch["advantages"])
         else:
+            # Use the actual terminal flags from the final timestep for bootstrapping
+            final_done = dones[-1]
             advs = compute_gae(
                 rewards=rews,
                 values=vals,
@@ -101,7 +105,7 @@ class PPOAgent(PolicyOptimizerBase):
                 gamma=self.config.gamma,
                 lam=self.config.lam,
                 next_value=last_val,
-                next_done=np.zeros_like(last_val),
+                next_done=final_done,
             )
 
         # 4. Compute Returns
@@ -126,16 +130,21 @@ class PPOAgent(PolicyOptimizerBase):
             if "log_probs" in batch and batch["log_probs"] is not None
             else np.array([i["log_prob"] for i in batch["infos"]])
         )
+        if len(logprobs.shape) > 2:
+            logprobs = logprobs.sum(axis=-1)
         logp_old_flat = torch.as_tensor(logprobs.flatten(), dtype=torch.float32, device=self.device)
 
         # Returns
         ret_flat = torch.as_tensor(rets.flatten(), dtype=torch.float32, device=self.device)
 
-        # --- FIX IS HERE ---
-        # Normalize Advantages using Numpy BEFORE converting to Tensor
+        # Normalize advantages if configured (CleanRL default: True)
         adv_flat_np = advs.flatten()
-        adv_flat_np = standardize_advantages(adv_flat_np)
+        if self.config.norm_adv:
+            adv_flat_np = standardize_advantages(adv_flat_np)
         adv_flat = torch.as_tensor(adv_flat_np, dtype=torch.float32, device=self.device)
+
+        # Old value predictions (needed for value clipping)
+        val_flat = torch.as_tensor(vals.flatten(), dtype=torch.float32, device=self.device)
 
         return {
             "obs": obs_flat,
@@ -143,6 +152,7 @@ class PPOAgent(PolicyOptimizerBase):
             "ret": ret_flat,
             "adv": adv_flat,
             "logp_old": logp_old_flat,
+            "val_old": val_flat,
         }
 
     def update_params(self, batch_tensors: dict):
@@ -158,6 +168,7 @@ class PPOAgent(PolicyOptimizerBase):
         ret = batch_tensors["ret"]
         adv = batch_tensors["adv"]
         logp_old = batch_tensors["logp_old"]
+        val_old = batch_tensors["val_old"]
 
         batch_size = obs.shape[0]
         minibatch_size = self.config.minibatch_size if self.config.minibatch_size else batch_size
@@ -182,13 +193,22 @@ class PPOAgent(PolicyOptimizerBase):
                 # Get current distribution
                 dist = self.ac.pi(obs[mb_idx])
                 logp_new = dist.log_prob(act[mb_idx])
+                if logp_new.dim() > 1:
+                    logp_new = logp_new.sum(-1)
+
+                logratio = logp_new - logp_old[mb_idx]
+                ratio = torch.exp(logratio)
 
                 # Check KL for early stopping
-                kl = approximate_kl(logp_old[mb_idx], logp_new)
-                if kl > 1.5 * self.config.target_kl:
-                    print(f"Early stopping policy update at epoch {epoch} due to reaching max KL.")
-                    early_stop = True
-                    break
+                with torch.no_grad():
+                    kl = ((ratio - 1) - logratio).mean()
+                    if self.config.target_kl is not None and kl > self.config.target_kl:
+                        print(
+                            f"Early stopping policy update at epoch {epoch} "
+                            f"due to reaching max KL ({kl.item():.5f})."
+                        )
+                        early_stop = True
+                        break
 
                 # Calculate PPO Loss (Functional)
                 loss_pi = ppo_policy_loss(
@@ -206,6 +226,7 @@ class PPOAgent(PolicyOptimizerBase):
                 loss_pi = loss_pi - ent_bonus
 
                 loss_pi.backward()
+                torch.nn.utils.clip_grad_norm_(self.ac.pi.parameters(), self.config.max_grad_norm)
                 self.pi_optimizer.step()
 
             if early_stop:
@@ -219,14 +240,23 @@ class PPOAgent(PolicyOptimizerBase):
 
                 pred_val = self.ac.v(obs[mb_idx])
 
-                # Calculate Value Loss (Functional)
-                loss_v = value_loss(
-                    values=pred_val,
-                    target_values=ret[mb_idx],
-                    clip=None,  # Optional: implement value clipping here
-                )
+                # Calculate Value Loss with optional clipping (CleanRL/PPO2 style)
+                if self.config.clip_vloss:
+                    val_pred_clipped = val_old[mb_idx] + torch.clamp(
+                        pred_val - val_old[mb_idx],
+                        -self.config.clip_ratio,
+                        self.config.clip_ratio,
+                    )
+                    v_loss_unclipped = (pred_val - ret[mb_idx]) ** 2
+                    v_loss_clipped = (val_pred_clipped - ret[mb_idx]) ** 2
+                    loss_v = 0.5 * torch.max(v_loss_unclipped, v_loss_clipped).mean()
+                else:
+                    loss_v = 0.5 * F.mse_loss(pred_val, ret[mb_idx])
+
+                loss_v = loss_v * self.config.vf_coef
 
                 loss_v.backward()
+                torch.nn.utils.clip_grad_norm_(self.ac.v.parameters(), self.config.max_grad_norm)
                 self.v_optimizer.step()
 
         # Store metrics for logging (optional)
